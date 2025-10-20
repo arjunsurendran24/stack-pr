@@ -1,6 +1,8 @@
-# Stacked PRs for GitHub
+Forked from https://github.com/modular/stack-pr
 
-This is a command-line tool that helps you create multiple GitHub
+# Stacked PRs for Azure DevOps
+
+This is a command-line tool that helps you create multiple Azure DevOps
 pull requests (PRs) all at once, with a stacked order of dependencies.
 
 Imagine that we have a change `A` and a change `B` depending on `A`, and we
@@ -19,19 +21,11 @@ Example:
 
 ### Dependencies
 
-This is a non-comprehensive list of dependencies required by `stack-pr.py`:
+This is a non-comprehensive list of dependencies required by `stack-ado`:
 
-- Install `gh`, e.g., `brew install gh` on MacOS.
-- Run `gh auth login` with SSH
-
-
-### Installation with `pipx`
-
-To install via [pipx](https://pipx.pypa.io/stable/) run:
-
-```bash
-pipx install stack-pr
-```
+- Install the Azure CLI, e.g., `brew install az` on macOS.
+- Run `az login` and ensure the `azure-devops` extension is installed via `az extension add --name azure-devops`.
+- Configure Azure DevOps defaults (for example: `az devops configure --defaults organization=https://dev.azure.com/<org> project=<project>`).
 
 ### Manual installation from source
 
@@ -43,7 +37,7 @@ pipx install .
 
 ## Usage
 
-`stack-pr` allows you to work with stacked PRs: submit, view, and land them.
+`stack-ado` allows you to work with stacked PRs: submit, view, and land them.
 
 ### Basic Workflow
 
@@ -67,56 +61,56 @@ git commit -m "Second change"
 
 3. Review what will be in your stack:
 ```bash
-stack-pr view  # Always safe to run, helps catch issues early
+stack-ado view  # Always safe to run, helps catch issues early
 ```
 
 4. Create/update the stack of PRs:
 ```bash
-stack-pr submit
+stack-ado submit
 ```
 > **Note**: `export` is an alias for `submit`.
 
 5. To update any PR in the stack:
 - Amend the corresponding commit
-- Run `stack-pr view` to verify your changes
-- Run `stack-pr submit` again
+- Run `stack-ado view` to verify your changes
+- Run `stack-ado submit` again
 
 6. To rebase your stack on the latest main:
 ```bash
 git checkout my-feature
 git pull origin main  # Get the latest main
 git rebase main       # Rebase your commits on top of main
-stack-pr submit       # Resubmit to update all PRs
+stack-ado submit       # Resubmit to update all PRs
 ```
 
 7. When your PRs are ready to merge, you have two options:
 
-**Option A**: Using `stack-pr land`:
+**Option A**: Using `stack-ado land`:
 ```bash
-stack-pr land
+stack-ado land
 ```
 This will:
 - Merge the bottom-most PR in your stack
 - Automatically rebase your remaining PRs
-- You can run `stack-pr land` again to merge the next PR once CI passes
+- You can run `stack-ado land` again to merge the next PR once CI passes
 
-**Option B**: Using GitHub web interface:
-1. Merge the bottom-most PR through GitHub UI
+**Option B**: Using the Azure DevOps web experience:
+1. Complete the bottom-most PR through the Azure DevOps UI
 2. After the merge, on your local machine:
    ```bash
    git checkout my-feature
    git pull origin main  # Get the merged changes
-   stack-pr submit       # Resubmit the stack to rebase remaining PRs
+   stack-ado submit       # Resubmit the stack to rebase remaining PRs
    ```
 3. Repeat for each PR in the stack
 
 That's it!
 
-> **Pro-tip**: Run `stack-pr view` frequently - it's a safe command that helps you understand the current state of your stack and catch any potential issues early.
+> **Pro-tip**: Run `stack-ado view` frequently - it's a safe command that helps you understand the current state of your stack and catch any potential issues early.
 
 ### Commands
 
-`stack-pr` has four main commands:
+`stack-ado` has four main commands:
 
 - `submit` (or `export`) - create a new stack of PRs from the given set of
   commits. One can think of this as “push my local changes to the corresponding
@@ -137,8 +131,8 @@ A usual workflow is the following:
 while not ready to merge:
     make local changes
     commit to local git repo or amend existing commits
-    create or update the stack with `stack-pr.py submit`
-merge changes with `stack-pr.py land`
+    create or update the stack with `stack-ado submit`
+merge changes with `stack-ado.py land`
 ```
 
 You can also use `view` at any point to examine the current state, and
@@ -164,7 +158,7 @@ and `-T` respectively and accept the standard git notation: e.g. one can use
 The first step before creating a stack of PRs is to double-check the changes
 we’re going to post.
 
-By default `stack-pr` will look at commits in `main..HEAD` range and will create
+By default `stack-ado` will look at commits in `main..HEAD` range and will create
 a PR for every commit in that range.
 
 For instance, if we have
@@ -194,7 +188,7 @@ We can double-check that by running the script with `view` command - it is
 always a safe command to run:
 
 ```bash
-# stack-pr view
+# stack-ado view
 ...
 VIEW
 **Stack:**
@@ -209,7 +203,7 @@ corresponding PRs and cross-link them. To do that, we run the tool with
 `submit` command:
 
 ```bash
-# stack-pr submit
+# stack-ado submit
 ...
 SUCCESS!
 ```
@@ -230,7 +224,7 @@ If the command succeeded, we should see “SUCCESS!” in the end, and we can no
 run `view` again to look at the new stack:
 
 ```python
-# stack-pr view
+# stack-ado view
 ...
 VIEW
 **Stack:**
@@ -240,7 +234,7 @@ VIEW
 SUCCESS!
 ```
 
-We can also go to github and check our PRs there:
+We can also go to Azure DevOps and check our PRs there:
 
 ![StackedPRExample2](https://modular-assets.s3.amazonaws.com/images/stackpr/example_1.png)
 
@@ -249,14 +243,14 @@ feedback), we simply amend the desired changes to the appropriate git commits
 and run `submit` again. If needed, we can rearrange commits or add new ones.
 
 `submit` simply syncs the local changes with the corresponding PRs. This is why
-we use the same `stack-pr submit` command when we create a new stack, rebase our
+we use the same `stack-ado submit` command when we create a new stack, rebase our
 changes on the latest main, update any PR in the stack, add new commits to the
 stack, or rearrange commits in the stack.
 
 When we are ready to merge our changes, we use `land` command.
 
 ```python
-# stack-pr land
+# stack-ado land
 LAND
 Stack:
    * cc932b71 (#439, 'ZolotukhinM/stack/103' -> 'ZolotukhinM/stack/102'): Optimized navigation algorithms for deep space travel
@@ -276,7 +270,7 @@ This command lands the first PR of the stack and rebases the rest. If we run
 there:
 
 ```python
-# stack-pr view
+# stack-ado view
 VIEW
 **Stack:**
    * **8177f347** (#439, 'ZolotukhinM/stack/103' -> 'ZolotukhinM/stack/102'): Optimized navigation algorithms for deep space travel
@@ -293,13 +287,13 @@ the script:
 
 ```bash
 # Submit a stack of last 5 commits
-stack-pr submit -B HEAD~5
+stack-ado submit -B HEAD~5
 
 # Use 'origin/main' instead of 'main' as the base for the stack
-stack-pr submit -B origin/main
+stack-ado submit -B origin/main
 
 # Do not include last two commits to the stack
-stack-pr submit -H HEAD~2
+stack-ado submit -H HEAD~2
 ```
 
 These options work for all script commands (and it’s recommended to first use
@@ -309,18 +303,18 @@ land first three of them:
 
 ```bash
 # Inspect what commits will be included HEAD~5..HEAD
-stack-pr view -B HEAD~5
+stack-ado view -B HEAD~5
 # Create a stack from last five commits
-stack-pr submit -B HEAD~5
+stack-ado submit -B HEAD~5
 
 # Inspect what commits will be included into the range HEAD~5..HEAD~2
-stack-pr view -B HEAD~5 -H HEAD~2
+stack-ado view -B HEAD~5 -H HEAD~2
 # Land first three PRs from the stack
-stack-pr land -B HEAD~5 -H HEAD~2
+stack-ado land -B HEAD~5 -H HEAD~2
 ```
 
 Note that generally one doesn't need to specify the base and head branches
-explicitly - `stack-pr` will figure out the correct range based on the current
+explicitly - `stack-ado` will figure out the correct range based on the current
 branch and the remote `main` by default.
 
 ## Command Line Options Reference
@@ -376,7 +370,7 @@ Takes no additional arguments beyond common ones.
 
 Default values for command line options can be specified via a config file.
 Path to the config file can be specified via `STACKPR_CONFIG` envvar, and by
-default it's assumed to be `.stack-pr.cfg` in the current folder.
+default it's assumed to be `.stack-ado.cfg` in the current folder.
 
 An example of a config file:
 

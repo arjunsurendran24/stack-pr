@@ -10,7 +10,7 @@ from stack_pr.cli import (
     generate_available_branch_name,
     generate_branch_name,
     get_branch_id,
-    get_gh_username,
+    get_ado_username,
     get_taken_branch_ids,
 )
 from stack_pr.git import git_config, is_rebase_in_progress
@@ -19,7 +19,7 @@ from stack_pr.git import git_config, is_rebase_in_progress
 @pytest.fixture(scope="module")
 def username() -> str:
     git_config.set_username_override("TestBot")
-    return get_gh_username()
+    return get_ado_username()
 
 
 @pytest.mark.parametrize(

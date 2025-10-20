@@ -25,6 +25,7 @@ def run_shell_command(
     *,
     quiet: bool,
     check: bool = True,
+    dry_run: bool = False,
     **kwargs: Any,  # noqa: ANN401
 ) -> subprocess.CompletedProcess:
     """Runs a shell command using the arguments provided.
@@ -35,6 +36,7 @@ def run_shell_command(
     Args:
         cmd: shell command to run.
         check: see subprocess.run for semantics.
+        dry_run: if True, print the command instead of executing it.
         **kwargs: see subprocess.run for semantics
             (https://docs.python.org/3/library/subprocess.html#subprocess.run).
 
@@ -43,7 +45,18 @@ def run_shell_command(
     """
     if "shell" in kwargs:
         raise ValueError("shell support has been removed")
-    _ = subprocess.list2cmdline(cmd)
+    cmd_str = subprocess.list2cmdline(cmd)
+
+    if dry_run:
+        print(f"[DRY RUN] {cmd_str}")
+        # Return a mock CompletedProcess object
+        return subprocess.CompletedProcess(
+            args=list(map(str, cmd)),
+            returncode=0,
+            stdout=b"" if kwargs.get("capture_output") else None,
+            stderr=b"" if kwargs.get("capture_output") else None,
+        )
+
     if quiet:
         kwargs.update({"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL})
     logger.debug("Running: %s", cmd)

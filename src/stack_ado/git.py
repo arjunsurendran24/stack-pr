@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from stack_pr.shell_commands import get_command_output, run_shell_command
+from stack_ado.shell_commands import get_command_output, run_shell_command
 
 
 class GitError(Exception):
@@ -133,54 +133,60 @@ def get_uncommitted_changes(
 
 
 # TODO: enforce this as a module dependency
-def check_gh_installed() -> None:
-    """Check if the gh tool is installed.
+def check_az_installed() -> None:
+    """Check if the Azure CLI is installed.
 
     Raises:
-        GitError if gh is not available.
+        GitError if az is not available.
     """
 
     try:
-        run_shell_command(["gh"], capture_output=True, quiet=False)
+        run_shell_command(["az", "--version"], capture_output=True, quiet=False)
     except subprocess.CalledProcessError as err:
         raise GitError(
-            "'gh' is not installed. Please visit https://cli.github.com/ for"
-            " installation instuctions."
+            "'az' is not installed. Please visit https://learn.microsoft.com/cli/azure/install-azure-cli "
+            "for installation instructions."
         ) from err
 
 
-def get_gh_username() -> str:
-    """Return the current github username.
+def get_ado_username() -> str:
+    """Return the current Azure DevOps username.
 
     If username_override is set, it will be used instead of the actual username.
 
     Returns:
-        Current github username as a string.
+        Current Azure DevOps username as a string.
 
     Raises:
-        GitError: if called outside a git repo.
+        GitError: if the username cannot be determined.
     """
     if git_config.username_override is not None:
         return git_config.username_override
 
-    user_query = get_command_output(
-        [
-            "gh",
-            "api",
-            "graphql",
-            "-f",
-            "owner=UserCurrent",
-            "-f",
-            "query=query{viewer{login}}",
-        ]
-    )
+    user_query = ""
+    try:
+        user_query = get_command_output(
+            ["az", "account", "show", "--query", "user.name", "--output", "tsv"]
+        ).strip()
+    except subprocess.CalledProcessError:
+        user_query = ""
 
-    # Extract the login name.
-    m = re.search(r"\"login\":\"(.*?)\"", user_query)
-    if not m:
-        raise GitError("Unable to find current github user name")
+    if not user_query:
+        try:
+            user_query = get_command_output(["git", "config", "user.name"]).strip()
+        except subprocess.CalledProcessError as err:
+            raise GitError(
+                "Unable to determine Azure DevOps username. Please log in using 'az login' "
+                "or configure git user.name."
+            ) from err
 
-    return m.group(1)
+    if not user_query:
+        raise GitError(
+            "Unable to determine Azure DevOps username. Please log in using 'az login' "
+            "or configure git user.name."
+        )
+
+    return user_query
 
 
 def get_changed_files(
